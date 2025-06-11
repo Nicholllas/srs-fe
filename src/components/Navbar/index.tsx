@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import Image from "next/image";
@@ -9,7 +9,9 @@ import Image from "next/image";
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
   const navLinks = [
     { name: "Beranda", href: "/" },
@@ -24,6 +26,32 @@ const Header = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    const checkLoginStatus = () => {
+      const token = localStorage.getItem("token");
+      setIsLoggedIn(!!token);
+    };
+
+    // Cek saat mount
+    checkLoginStatus();
+
+    // Dengarkan perubahan manual (event custom)
+    window.addEventListener("login", checkLoginStatus);
+    window.addEventListener("logout", checkLoginStatus);
+
+    return () => {
+      window.removeEventListener("login", checkLoginStatus);
+      window.removeEventListener("logout", checkLoginStatus);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    window.dispatchEvent(new Event("logout"));
+    setIsLoggedIn(false);
+    router.push("/signin");
+  };
 
   return (
     <header
@@ -68,18 +96,29 @@ const Header = () => {
 
           {/* Desktop Actions */}
           <div className="hidden items-center gap-4 md:flex">
-            <Link
-              href="/signin"
-              className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:text-[#ec1b21]"
-            >
-              Masuk
-            </Link>
-            <Link
-              href="/signup"
-              className="rounded-lg bg-[#ec1b21] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#c5161b]"
-            >
-              Daftar
-            </Link>
+            {isLoggedIn ? (
+              <button
+                onClick={handleLogout}
+                className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:text-[#ec1b21]"
+              >
+                Logout
+              </button>
+            ) : (
+              <>
+                <Link
+                  href="/signin"
+                  className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:text-[#ec1b21]"
+                >
+                  Masuk
+                </Link>
+                <Link
+                  href="/signup"
+                  className="rounded-lg bg-[#ec1b21] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#c5161b]"
+                >
+                  Daftar
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -117,20 +156,34 @@ const Header = () => {
                 ))}
               </nav>
               <div className="mt-4 flex items-center gap-3 border-t border-gray-100 pt-4">
-                <Link
-                  href="/signin"
-                  className="flex-1 rounded-lg border border-gray-200 px-4 py-3 text-center text-sm font-medium text-gray-600 hover:bg-gray-50"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Masuk
-                </Link>
-                <Link
-                  href="/signup"
-                  className="flex-1 rounded-lg bg-[#ec1b21] px-4 py-3 text-center text-sm font-medium text-white hover:bg-[#c5161b]"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Daftar
-                </Link>
+                {isLoggedIn ? (
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      setIsMenuOpen(false);
+                    }}
+                    className="flex-1 rounded-lg border border-gray-200 px-4 py-3 text-center text-sm font-medium text-gray-600 hover:bg-gray-50"
+                  >
+                    Logout
+                  </button>
+                ) : (
+                  <>
+                    <Link
+                      href="/signin"
+                      className="flex-1 rounded-lg border border-gray-200 px-4 py-3 text-center text-sm font-medium text-gray-600 hover:bg-gray-50"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Masuk
+                    </Link>
+                    <Link
+                      href="/signup"
+                      className="flex-1 rounded-lg bg-[#ec1b21] px-4 py-3 text-center text-sm font-medium text-white hover:bg-[#c5161b]"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Daftar
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </div>

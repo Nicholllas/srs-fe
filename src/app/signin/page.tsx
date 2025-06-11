@@ -1,16 +1,49 @@
-import Link from "next/link";
-import { Metadata } from "next";
+"use client";
 
-export const metadata: Metadata = {
-  title: "Login | Small Room Soul",
-  description: "Login to your Small Room Soul account",
-};
+import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 const SigninPage = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const router = useRouter();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    try {
+      const res = await fetch("http://localhost:8000/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Login failed");
+      }
+
+      const data = await res.json();
+      localStorage.setItem("token", data.access_token);
+      window.dispatchEvent(new Event("login"));
+      router.push("/dashboard");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Terjadi kesalahan saat login");
+      }
+    }
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-gray-900 to-gray-800 p-4 pt-24">
       <div className="w-full max-w-md">
-        {/* Header */}
         <div className="mb-8 text-center">
           <div className="mb-4 flex justify-center"></div>
           <h1 className="mb-2 text-3xl font-bold text-white">Welcome Back</h1>
@@ -19,10 +52,8 @@ const SigninPage = () => {
           </p>
         </div>
 
-        {/* Login Card */}
         <div className="overflow-hidden rounded-xl bg-white shadow-lg">
           <div className="p-8">
-            {/* Social Login Buttons */}
             <div className="mb-6 space-y-4">
               <button className="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 transition hover:bg-gray-50">
                 <svg
@@ -34,18 +65,19 @@ const SigninPage = () => {
                 </svg>
                 <span>Continue with Google</span>
               </button>
-              {/* Tombol GitHub sudah dihapus */}
             </div>
 
-            {/* Divider */}
             <div className="my-6 flex items-center">
               <div className="flex-grow border-t border-gray-200"></div>
               <span className="mx-4 flex-shrink text-gray-500">or</span>
               <div className="flex-grow border-t border-gray-200"></div>
             </div>
 
-            {/* Login Form */}
-            <form className="space-y-4">
+            {error && (
+              <p className="mb-4 text-sm text-red-600 text-center">{error}</p>
+            )}
+
+            <form className="space-y-4" onSubmit={handleSubmit}>
               <div>
                 <label
                   htmlFor="email"
@@ -57,7 +89,10 @@ const SigninPage = () => {
                   type="email"
                   id="email"
                   placeholder="your@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-transparent focus:ring-2 focus:ring-red-600"
+                  required
                 />
               </div>
 
@@ -80,7 +115,10 @@ const SigninPage = () => {
                   type="password"
                   id="password"
                   placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-transparent focus:ring-2 focus:ring-red-600"
+                  required
                 />
               </div>
 
@@ -106,7 +144,6 @@ const SigninPage = () => {
               </button>
             </form>
 
-            {/* Sign Up Link */}
             <div className="mt-6 text-center text-sm text-gray-600">
               Don&apos;t have an account?{" "}
               <Link

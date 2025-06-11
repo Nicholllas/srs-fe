@@ -1,18 +1,54 @@
+"use client";
+import { useState } from "react";
 import Link from "next/link";
-import { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title: "Sign Up | Small Room Soul",
-  description: "Create a new Small Room Soul account",
-};
+import { useRouter } from "next/navigation";
+import { register, loginUser } from "@/lib/api";
 
 const SignupPage = () => {
+  const router = useRouter();
+
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    terms: false,
+  });
+
+  const [errors, setErrors] = useState<string | null>(null);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
+    setForm({
+      ...form,
+      [name]: type === "checkbox" ? checked : value,
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrors(null);
+
+    if (!form.terms) {
+      setErrors("You must agree to the terms and conditions.");
+      return;
+    }
+
+    try {
+      await register(form.name, form.email, form.password);
+      const response = await loginUser(form.email, form.password);
+      localStorage.setItem("token", response.token);
+      window.dispatchEvent(new Event("login")); // Update state di navbar
+      router.push("/dashboard");
+    } catch (err: any) {
+      console.error(err);
+      setErrors(err.message ?? "Registration failed. Please try again.");
+    }
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-gray-900 to-gray-800 p-4 pt-24">
       <div className="w-full max-w-md">
-        {/* Header */}
         <div className="mb-8 text-center">
-          <div className="mb-4 flex justify-center"></div>
           <h1 className="mb-2 text-3xl font-bold text-white">
             Join Small Room Soul
           </h1>
@@ -21,33 +57,15 @@ const SignupPage = () => {
           </p>
         </div>
 
-        {/* Sign Up Card */}
         <div className="overflow-hidden rounded-xl bg-white shadow-lg">
           <div className="p-8">
-            {/* Social Login Buttons */}
-            <div className="mb-6 space-y-4">
-              <button className="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 transition hover:bg-gray-50">
-                <svg
-                  className="h-5 w-5"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                >
-                  <path d="M12.545 10.239v3.821h5.445c-0.712 2.315-2.647 3.972-5.445 3.972-3.332 0-6.033-2.701-6.033-6.032s2.701-6.032 6.033-6.032c1.498 0 2.866 0.549 3.921 1.453l2.814-2.814c-1.786-1.664-4.167-2.682-6.735-2.682-5.522 0-10 4.477-10 10s4.478 10 10 10c8.396 0 10-7.496 10-10 0-0.671-0.068-1.325-0.182-1.977h-9.818z" />
-                </svg>
-                <span>Continue with Google</span>
-              </button>
-              {/* GitHub button removed */}
-            </div>
+            {errors && (
+              <div className="mb-4 rounded bg-red-100 px-4 py-2 text-sm text-red-700">
+                {errors}
+              </div>
+            )}
 
-            {/* Divider */}
-            <div className="my-6 flex items-center">
-              <div className="flex-grow border-t border-gray-200"></div>
-              <span className="mx-4 flex-shrink text-gray-500">or</span>
-              <div className="flex-grow border-t border-gray-200"></div>
-            </div>
-
-            {/* Sign Up Form */}
-            <form className="space-y-4">
+            <form className="space-y-4" onSubmit={handleSubmit}>
               <div>
                 <label
                   htmlFor="name"
@@ -58,8 +76,11 @@ const SignupPage = () => {
                 <input
                   type="text"
                   id="name"
-                  placeholder="Your name"
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-transparent focus:ring-2 focus:ring-red-600"
+                  name="name"
+                  value={form.name}
+                  onChange={handleChange}
+                  className="text-gray-900 w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-red-600"
+                  required
                 />
               </div>
 
@@ -73,8 +94,11 @@ const SignupPage = () => {
                 <input
                   type="email"
                   id="email"
-                  placeholder="your@email.com"
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-transparent focus:ring-2 focus:ring-red-600"
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  className="text-gray-900  w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-red-600"
+                  required
                 />
               </div>
 
@@ -88,8 +112,11 @@ const SignupPage = () => {
                 <input
                   type="password"
                   id="password"
-                  placeholder="••••••••"
-                  className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-transparent focus:ring-2 focus:ring-red-600"
+                  name="password"
+                  value={form.password}
+                  onChange={handleChange}
+                  className="text-gray-900  w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-red-600"
+                  required
                 />
               </div>
 
@@ -97,6 +124,9 @@ const SignupPage = () => {
                 <input
                   id="terms"
                   type="checkbox"
+                  name="terms"
+                  checked={form.terms}
+                  onChange={handleChange}
                   className="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500"
                 />
                 <label
@@ -112,13 +142,12 @@ const SignupPage = () => {
 
               <button
                 type="submit"
-                className="w-full rounded-lg bg-red-600 px-4 py-3 text-white transition hover:bg-red-700 focus:ring-2 focus:ring-red-600 focus:ring-offset-2 focus:outline-none"
+                className="w-full rounded-lg bg-red-600 px-4 py-3 text-white transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2"
               >
                 Sign Up
               </button>
             </form>
 
-            {/* Sign In Link */}
             <div className="mt-6 text-center text-sm text-gray-600">
               Already have an account?{" "}
               <Link
