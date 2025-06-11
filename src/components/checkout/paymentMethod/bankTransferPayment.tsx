@@ -37,7 +37,7 @@ const BankTransferPayment = ({
               <p className="text-xs text-gray-500">Account Number</p>
               <div className="flex items-center gap-2">
                 <p className="font-mono text-lg font-bold tracking-wider text-gray-900">
-                  1234 5678 9012
+                  8770782300
                 </p>
                 <button
                   className="text-[#ec1b21] hover:text-[#c5161b]"
@@ -69,7 +69,7 @@ const BankTransferPayment = ({
             </div>
             <div>
               <p className="text-xs text-gray-500">Account Name</p>
-              <p className="font-medium text-gray-900">Small Room Soul</p>
+              <p className="font-medium text-gray-900">Joko</p>
             </div>
           </div>
           <div className="rounded-md bg-gray-50 p-3">

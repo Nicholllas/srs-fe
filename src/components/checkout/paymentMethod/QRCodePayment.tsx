@@ -33,7 +33,7 @@ const QRCodePayment = ({
               alt="QRIS Payment Code"
               width={200}
               height={200}
-              className="h-48 w-48 object-contain"
+              className="h-108 w-108 object-contain"
             />
           </div>
 
