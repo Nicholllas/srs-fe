@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, MapPin, Ticket, LoaderCircle } from "lucide-react";
+import { Calendar, MapPin, Ticket, LoaderCircle, Users } from "lucide-react"; 
 import { getAllEvents, getFullImageUrl, formatPrice, formatDate } from "@/lib/api/concerts";
 
 interface EventType {
@@ -15,6 +15,7 @@ interface EventType {
     poster_event_url: string;
     lokasi: string;
     harga_tiket: number;
+    kapasitas: number; 
     venue?: {
         nama_venue: string;
     };
@@ -26,7 +27,8 @@ export default function ConcertsPage() {
 
     useEffect(() => {
         const loadEvents = async () => {
-            const data = await getAllEvents();
+            // Beri tipe pada data yang diterima untuk konsistensi
+            const data: EventType[] = await getAllEvents();
             setEvents(data);
             setLoading(false);
         };
@@ -98,9 +100,12 @@ export default function ConcertsPage() {
                                                 <span className="text-gray-700">{event.venue?.nama_venue || event.lokasi}</span>
                                             </div>
                                             <div className="flex items-center">
+                                                <Users className="mr-3 h-5 w-5 text-[#ec1b21]" />
+                                                <span className="text-gray-700">Kapasitas: {event.kapasitas.toLocaleString('id-ID')}</span>
+                                            </div>
+                                            <div className="flex items-center">
                                                 <Ticket className="mr-3 h-5 w-5 text-[#ec1b21]" />
                                                 <span className="font-medium text-gray-900">
-                                                    {/* Sekarang TypeScript tidak akan error di sini */}
                                                     {formatPrice(event.harga_tiket)} 
                                                 </span>
                                             </div>
@@ -119,17 +124,17 @@ export default function ConcertsPage() {
                 )}
 
                 {!loading && events.length === 0 && (
-                    <div className="col-span-full py-12 text-center">
-                        <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
-                            <Ticket className="h-8 w-8 text-gray-400" />
-                        </div>
-                        <h3 className="mb-2 text-xl font-bold text-gray-900">
-                            Tidak ada konser yang tersedia
-                        </h3>
-                        <p className="text-gray-600">
-                            Maaf, saat ini tidak ada konser yang dijadwalkan. Silakan periksa kembali nanti.
-                        </p>
-                    </div>
+                   <div className="col-span-full py-12 text-center">
+                     <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
+                       <Ticket className="h-8 w-8 text-gray-400" />
+                     </div>
+                     <h3 className="mb-2 text-xl font-bold text-gray-900">
+                       Tidak ada konser yang tersedia
+                     </h3>
+                     <p className="text-gray-600">
+                       Maaf, saat ini tidak ada konser yang dijadwalkan. Silakan periksa kembali nanti.
+                     </p>
+                   </div>
                 )}
             </div>
         </section>
