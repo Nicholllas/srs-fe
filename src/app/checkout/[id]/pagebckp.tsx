@@ -62,7 +62,7 @@ export default function CheckoutPage() {
 
   const ticketPrice = concert.price;
   const subtotal = ticketPrice * ticketQuantity;
-  const serviceFee = 5000 * ticketQuantity;
+  const serviceFee = 0 * ticketQuantity;
   const total = subtotal + serviceFee;
 
   const handleQuantityChange = (newQuantity: number) => {
@@ -239,7 +239,7 @@ export default function CheckoutPage() {
                     required
                   />
                   <p className="mt-1 text-xs text-gray-900">
-                    Kami akan mengirimkan invoice dan tiket melalui Whatsapp
+                    Kami akan mengirimkan invoice dan tiket melalui Email/Whatsapp
                   </p>
                 </div>
               </div>
@@ -522,7 +522,16 @@ export default function CheckoutPage() {
                         type="file"
                         id="payment-proof"
                         accept="image/*,.pdf"
-                        onChange={handleFileChange}
+                        // onChange={handleFileChange}
+                        onChange={(e) => {
+                            const file = e.target.files ? e.target.files[0] : null;
+                            handleFileChange(file); // Panggil fungsi dari props
+                            
+                            // Baris ini penting untuk mengizinkan pemilihan file yang sama setelah error
+                            if (!file || file.size > 2 * 1024 * 1024) {
+                                e.target.value = "";
+                            }
+                        }}
                         className="hidden"
                       />
                     </label>

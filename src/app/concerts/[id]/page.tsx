@@ -1,16 +1,15 @@
+// File: app/concerts/[id]/page.tsx
+
 "use client";
 
-import React, { use } from "react";
-import Image from "next/image";
+import React, { useState, useEffect, use } from "react";
 import Link from "next/link";
-import { notFound, useRouter } from "next/navigation";
-
+import { useRouter, notFound } from "next/navigation";
 import {
   Calendar,
   MapPin,
   ArrowLeft,
-  Star,
-  ChevronDown,
+  LoaderCircle,
   Clock,
   Facebook,
   Twitter,
@@ -19,120 +18,130 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { concerts } from "@/lib/concerts";
+import { getEventById, getFullImageUrl, formatPrice, formatDate, calculateDuration } from "@/lib/api/concerts";
 
-export default function ConcertDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+// Tipe data untuk event dari API
+interface EventData {
+    id: number;
+    nama_event: string;
+    deskripsi_event: string;
+    tanggal_mulai: string;
+    tanggal_selesai: string;
+    lokasi: string;
+    harga_tiket: number;
+    poster_event_url: string;
+    venue: {
+        nama_venue: string;
+        alamat: string;
+    };
+}
+
+export default function ConcertDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  // "Unwrap" params menggunakan React.use() untuk mendapatkan id
   const { id } = use(params);
+
+  const [event, setEvent] = useState<EventData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const router = useRouter();
-  const concert = concerts.find((c) => String(c.id) === id);
 
-  if (!concert) return notFound();
+  useEffect(() => {
+    if (!id) return;
 
+    const fetchEvent = async () => {
+      try {
+        setLoading(true);
+        const data = await getEventById(id);
+        if (!data) {
+          setError(new Error("Event not found"));
+        } else {
+          setEvent(data);
+        }
+      } catch (e) {
+        setError(e as Error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvent();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <LoaderCircle className="h-12 w-12 animate-spin text-[#ec1b21]" />
+      </div>
+    );
+  }
+
+  if (error || !event) {
+    return notFound();
+  }
+
+  // Render halaman jika data berhasil didapatkan
   return (
-    <div className="bg-white pt-[80px] min-h-screen">
-      {/* Padding top 80px disesuaikan untuk navbar fixed */}
-
-      <main className="container mx-auto mt-6 mb-20 max-w-4xl px-4 sm:px-6 lg:px-8">
-        {/* Back button */}
+    <div className="bg-white pt-20 min-h-screen">
+      <main className="container mx-auto mt-6 mb-20 max-w-4xl px-4">
+        {/* Tombol Kembali */}
         <div className="mb-4">
           <Button
             variant="outline"
-            className="-ml-2 px-2 py-1 text-sm border-[#ec1b21] bg-white text-[#ec1b21] hover:bg-[#ec1b21] hover:text-white"
+            className="border-[#ec1b21] bg-white text-[#ec1b21] hover:bg-[#ec1b21] hover:text-white"
             onClick={() => router.push("/concerts")}
           >
             <ArrowLeft className="mr-1 h-4 w-4" />
-            Back
+            Kembali ke Semua Konser
           </Button>
         </div>
 
-        {/* Image banner */}
+        {/* Banner Gambar */}
         <div className="relative mb-6 overflow-hidden rounded-xl shadow-md">
-          <Image
-            src={concert.bannerUrl}
-            alt={concert.title}
-            width={1200}
-            height={400}
-            className="h-48 w-full object-cover sm:h-64"
-            priority
+          <img
+            src={getFullImageUrl(event.poster_event_url)}
+            alt={event.nama_event}
+            className="h-auto w-full max-h-96 object-cover"
           />
-          <Button className="absolute right-4 bottom-4 bg-[#ec1b21] text-xs font-semibold text-white shadow-lg hover:bg-[#c5161b]">
-            View all pictures (20)
-          </Button>
         </div>
 
-        {/* Breadcrumb */}
-        <nav className="mb-4 text-sm text-gray-500">
-          <ol className="flex flex-wrap items-center space-x-1">
-            <li>
-              <Link href="#" className="hover:text-gray-700 hover:underline">
-                Home
-              </Link>
-            </li>
-            <li className="text-gray-300">/</li>
-            <li>
-              <Link href="#" className="hover:text-gray-700 hover:underline">
-                {concert.city}
-              </Link>
-            </li>
-            <li className="text-gray-300">/</li>
-            <li className="max-w-xs truncate font-medium text-gray-900">
-              {concert.title}
-            </li>
-          </ol>
-        </nav>
-
-        {/* Title and artist */}
+        {/* Judul */}
         <div className="mb-6">
-          <h1 className="mb-1 text-3xl font-bold text-gray-900">
-            {concert.title}
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
+            {event.nama_event}
           </h1>
-          <p className="text-lg text-gray-600">by {concert.artist}</p>
         </div>
 
-        {/* Location and date */}
-        <div className="mb-6 space-y-3">
+        {/* Info Lokasi & Tanggal */}
+        <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex items-start space-x-3">
-            <div className="flex-shrink-0 pt-0.5">
-              <MapPin className="h-5 w-5 text-[#ec1b21]" />
-            </div>
+            <MapPin className="h-5 w-5 text-[#ec1b21] mt-1 flex-shrink-0" />
             <div>
-              <p className="text-base font-semibold text-gray-800">
-                {concert.venue}
-              </p>
-              <p className="text-sm text-gray-500">{concert.address}</p>
+              <p className="font-semibold text-gray-800">{event.venue.nama_venue}</p>
+              <p className="text-sm text-gray-500">{event.venue.alamat}</p>
             </div>
           </div>
-
           <div className="flex items-start space-x-3">
-            <div className="flex-shrink-0 pt-0.5">
-              <Calendar className="h-5 w-5 text-[#ec1b21]" />
-            </div>
+            <Calendar className="h-5 w-5 text-[#ec1b21] mt-1 flex-shrink-0" />
             <div>
-              <p className="text-base font-semibold text-gray-800">
-                {concert.date}
-              </p>
+              <p className="font-semibold text-gray-800">{formatDate(event.tanggal_mulai)}</p>
               <div className="flex items-center space-x-2 text-sm text-gray-500">
                 <Clock className="h-4 w-4" />
-                <span>{concert.duration}</span>
+                <span>Durasi: {calculateDuration(event.tanggal_mulai, event.tanggal_selesai)}</span>
               </div>
             </div>
           </div>
         </div>
-
-        {/* Price and buy button */}
-        <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-base font-semibold text-gray-700">
-            From {concert.price}
-          </div>
-          <Link href={`/checkout/${concert.id}`} passHref>
-            <Button className="h-12 bg-[#ec1b21] px-6 text-base font-semibold text-white shadow-md hover:bg-[#c5161b]">
-              Buy Tickets
-            </Button>
-          </Link>
+        
+        {/* Tombol Harga & Beli Tiket */}
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-center gap-4 sticky top-20 bg-white/80 backdrop-blur-sm p-4 rounded-lg shadow-sm border">
+            <div className="text-lg font-bold text-gray-800">
+                Harga mulai dari <span className="text-[#ec1b21]">{formatPrice(event.harga_tiket)}</span>
+            </div>
+            <Link href={`/checkout/${event.id}`} passHref className="sm:ml-auto">
+                <Button size="lg" className="w-full sm:w-auto bg-[#ec1b21] text-white hover:bg-[#c5161b]">
+                    Beli Tiket
+                </Button>
+            </Link>
         </div>
 
         {/* Share buttons */}
@@ -181,21 +190,14 @@ export default function ConcertDetailPage({
           </div>
         </div>
 
-        {/* About this concert */}
-        <section className="mb-10">
+        {/* Tentang Konser */}
+        <section>
           <h2 className="mb-4 border-b pb-2 text-xl font-semibold text-gray-900">
             About this concert
           </h2>
-          <p className="mb-3 leading-relaxed text-gray-700">
-            {concert.description}
+          <p className="leading-relaxed text-gray-700 whitespace-pre-wrap">
+            {event.deskripsi_event}
           </p>
-          <Link
-            href="#"
-            className="inline-flex items-center font-medium text-[#ec1b21] hover:underline"
-          >
-            Read more
-            <ChevronDown className="ml-1 h-4 w-4" />
-          </Link>
         </section>
 
         {/* Benefits section */}
@@ -254,70 +256,9 @@ export default function ConcertDetailPage({
               <li>No smoking in the venue.</li>
             </ol>
           </div>
-          <Link
-            href="#"
-            className="mt-3 inline-flex items-center font-medium text-[#ec1b21] hover:underline"
-          >
-            View full policy
-            <ChevronDown className="ml-1 h-4 w-4" />
-          </Link>
         </section>
 
-        {/* Organizer section */}
-        <section className="mb-10 rounded-xl border border-gray-200 p-6">
-          <h3 className="mb-4 text-lg font-semibold text-gray-900">
-            Event organizer
-          </h3>
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center space-x-4">
-              <Image
-                src={concert.organizerImage}
-                alt={concert.organizer}
-                width={64}
-                height={64}
-                className="h-16 w-16 rounded-full border-2 border-[#ec1b21] object-cover"
-              />
-              <div>
-                <p className="text-lg font-semibold text-gray-900">
-                  {concert.organizer}
-                </p>
-                <p className="text-sm text-gray-500">
-                  {concert.followers} followers · {concert.eventsCount} events
-                </p>
-                <div className="mt-1 flex items-center">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`h-4 w-4 ${
-                        i < Math.floor(concert.rating)
-                          ? "fill-current text-yellow-400"
-                          : "text-gray-300"
-                      }`}
-                    />
-                  ))}
-                  <span className="ml-2 text-sm text-gray-500">
-                    {concert.rating.toFixed(1)} rating
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Button
-                variant="outline"
-                className="border-[#ec1b21] bg-white text-[#ec1b21] hover:bg-[#ec1b21] hover:text-white"
-              >
-                View profile
-              </Button>
-
-              <Button className="bg-[#ec1b21] hover:bg-[#c5161b] text-white">
-                Follow
-              </Button>
-            </div>
-          </div>
-        </section>
-
-        {/* Similar concerts */}
-        <section className="mb-10">
+        {/* <section className="mb-10">
           <h3 className="mb-6 pb-2 text-xl font-semibold text-gray-900">
             Similar concerts
           </h3>
@@ -335,7 +276,8 @@ export default function ConcertDetailPage({
               </div>
             ))}
           </div>
-        </section>
+        </section> */}
+
       </main>
     </div>
   );

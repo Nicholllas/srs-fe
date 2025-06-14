@@ -85,7 +85,7 @@ const CustomerInfoForm: React.FC<CustomerInfoFormProps> = ({
             required
           />
           <p className="mt-1 text-xs text-gray-900">
-            Kami akan mengirimkan invoice dan tiket melalui Whatsapp
+            Kami akan mengirimkan invoice dan tiket melalui Email / Whatsapp
           </p>
         </div>
       </div>

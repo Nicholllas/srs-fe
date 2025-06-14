@@ -10,7 +10,7 @@ export interface Concert {
   bannerUrl: string; // Properti baru
   category: string;
   description: string;
-  artist: string;
+  artist: string; 
   duration: string;
   organizer: string; // Properti baru
   organizerImage: string; // Properti baru
